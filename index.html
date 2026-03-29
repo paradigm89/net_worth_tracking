@@ -4,144 +4,343 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Net Worth Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
 </head>
 <body>
-  <div class="app">
-    <header class="header">
-      <div class="header-left">
-        <h1>Net Worth Tracker</h1>
-        <span class="subtitle">Monthly asset snapshot dashboard</span>
+
+<!-- Toast container -->
+<div id="toastContainer" class="toast-container" aria-live="polite"></div>
+
+<!-- Confirm modal -->
+<div id="modalOverlay" class="modal-overlay" hidden role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="modal-icon-wrap" id="modalIconWrap">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+    </div>
+    <h3 id="modalTitle">Delete snapshot?</h3>
+    <p id="modalMessage"></p>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modalCancel">Cancel</button>
+      <button class="btn btn-danger" id="modalConfirm">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <!-- ── Sidebar ── -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
       </div>
-      <div class="header-right">
-        <button class="btn btn-ghost" id="themeToggle" title="Toggle theme">☀</button>
+      <span class="brand-name">NetWorth</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <button class="nav-item active" data-panel="overview">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Overview</span>
+      </button>
+      <button class="nav-item" data-panel="compare">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+        <span>Compare</span>
+      </button>
+      <button class="nav-item" data-panel="history">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span>History</span>
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="btn btn-primary sidebar-import-btn" id="sidebarImportBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Import Snapshot
+      </button>
+    </div>
+  </aside>
+
+  <!-- ── Main wrapper ── -->
+  <div class="main-wrapper">
+
+    <!-- Topbar -->
+    <header class="topbar">
+      <button class="icon-btn menu-btn" id="menuBtn" aria-label="Toggle menu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span class="topbar-title" id="topbarTitle">Overview</span>
+      <div class="topbar-actions">
+        <button class="btn btn-primary topbar-import-btn" id="topbarImportBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          Import
+        </button>
+        <button class="icon-btn" id="themeToggle" aria-label="Toggle theme">
+          <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+          <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+        </button>
       </div>
     </header>
 
-    <main class="main">
-      <!-- Upload Section -->
-      <section class="card upload-card">
-        <h2>Upload Monthly Snapshot</h2>
-        <p class="hint">
-          CSV format: <code>Asset,Category,Value</code> &mdash; one row per asset.
-          <button class="btn-link" id="downloadSample">Download sample</button>
-        </p>
-        <div class="upload-row">
-          <div class="month-picker">
-            <label for="snapshotMonth">Month</label>
-            <input type="month" id="snapshotMonth" />
+    <!-- Import panel (slides down) -->
+    <div class="import-panel" id="importPanel" aria-hidden="true">
+      <div class="import-panel-inner">
+        <div class="import-panel-header">
+          <div>
+            <h2>Import Monthly Snapshot</h2>
+            <p class="import-hint">CSV format: <code>Asset, Category, Value</code> — one row per asset. <button class="btn-link" id="downloadSample">Download sample ↓</button></p>
           </div>
-          <label class="file-label" for="csvFile">
-            <span id="fileLabelText">Choose CSV file…</span>
-            <input type="file" id="csvFile" accept=".csv,text/csv" />
-          </label>
-          <button class="btn btn-primary" id="uploadBtn" disabled>Import</button>
+          <button class="icon-btn" id="closeImport" aria-label="Close">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          </button>
         </div>
-        <div id="uploadError" class="error-msg" hidden></div>
+
+        <!-- Drop zone -->
+        <div class="drop-zone" id="dropZone">
+          <div class="drop-zone-inner" id="dropZoneInner">
+            <div class="drop-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            </div>
+            <div class="drop-text-main">Drop your CSV file here</div>
+            <div class="drop-text-sub">or <label class="browse-link" for="csvFile">browse to upload</label></div>
+          </div>
+          <input type="file" id="csvFile" accept=".csv,text/csv" />
+        </div>
+
+        <!-- File preview + import action -->
+        <div class="import-footer" id="importFooter" hidden>
+          <div class="file-preview">
+            <div class="file-preview-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+            </div>
+            <div class="file-preview-info">
+              <div class="file-preview-name" id="importFileName">—</div>
+              <div class="file-preview-meta" id="importFileMeta">—</div>
+            </div>
+            <button class="icon-btn icon-btn--sm" id="clearFile" aria-label="Clear file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+          </div>
+          <div class="import-action-row">
+            <div class="field-group">
+              <label for="snapshotMonth">Snapshot month</label>
+              <input type="month" id="snapshotMonth" />
+            </div>
+            <button class="btn btn-primary import-submit-btn" id="uploadBtn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              Import Snapshot
+            </button>
+          </div>
+        </div>
+
+        <div id="uploadError" class="import-error" hidden></div>
+      </div>
+    </div>
+
+    <!-- ── Page content ── -->
+    <main class="main-content">
+
+      <!-- ══ OVERVIEW panel ══ -->
+      <section class="panel active" id="panel-overview">
+
+        <!-- Hero net worth -->
+        <div class="hero" id="heroSection" hidden>
+          <div class="hero-label">Total Net Worth</div>
+          <div class="hero-value" id="heroNetWorth">$0</div>
+          <div class="hero-change" id="heroChange"></div>
+        </div>
+
+        <!-- KPI strip -->
+        <div class="kpi-strip" id="kpiStrip" hidden>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon--blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-4 0v2"/></svg>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Total Assets</div>
+              <div class="kpi-value" id="kpiAssets">—</div>
+              <div class="kpi-sub" id="kpiAssetsSub"></div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon--violet">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Largest Asset</div>
+              <div class="kpi-value" id="kpiLargest">—</div>
+              <div class="kpi-sub" id="kpiLargestSub"></div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon--teal">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8.56 2.75c4.37 6.03 6.02 9.42 8.03 17.72m2.54-15.38c-3.72 4.35-8.94 5.66-16.88 5.85m19.5 1.9c-3.5-.93-6.63-.82-8.94 0-2.58.92-5.01 2.86-7.44 6.32"/></svg>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Categories</div>
+              <div class="kpi-value" id="kpiCategories">—</div>
+              <div class="kpi-sub" id="kpiCategoriesSub"></div>
+            </div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon kpi-icon--green" id="kpiGrowthIcon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            </div>
+            <div class="kpi-body">
+              <div class="kpi-label">Monthly Change</div>
+              <div class="kpi-value" id="kpiGrowth">—</div>
+              <div class="kpi-sub" id="kpiGrowthSub"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="charts-grid" id="chartsGrid" hidden>
+          <div class="card chart-card chart-card--wide">
+            <div class="card-header">
+              <h3>Net Worth Over Time</h3>
+              <div class="card-header-meta" id="trendMeta"></div>
+            </div>
+            <div class="chart-wrap">
+              <canvas id="trendChart"></canvas>
+            </div>
+          </div>
+          <div class="card chart-card">
+            <div class="card-header">
+              <h3>Asset Breakdown</h3>
+              <select id="breakdownMonth" class="select-sm"></select>
+            </div>
+            <div class="chart-wrap chart-wrap--donut">
+              <canvas id="donutChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty state -->
+        <div class="empty-state" id="emptyState">
+          <div class="empty-illustration">
+            <svg viewBox="0 0 200 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="20" y="100" width="28" height="40" rx="4" fill="var(--primary)" opacity="0.15"/>
+              <rect x="62" y="75" width="28" height="65" rx="4" fill="var(--primary)" opacity="0.3"/>
+              <rect x="104" y="55" width="28" height="85" rx="4" fill="var(--primary)" opacity="0.5"/>
+              <rect x="146" y="35" width="28" height="105" rx="4" fill="var(--primary)" opacity="0.8"/>
+              <path d="M34 100 L76 75 L118 55 L160 35" stroke="var(--primary)" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="34" cy="100" r="4" fill="var(--primary)"/>
+              <circle cx="76" cy="75" r="4" fill="var(--primary)"/>
+              <circle cx="118" cy="55" r="4" fill="var(--primary)"/>
+              <circle cx="160" cy="35" r="4" fill="var(--primary)"/>
+            </svg>
+          </div>
+          <h2>Start tracking your wealth</h2>
+          <p>Import your first monthly CSV snapshot to visualize and track your net worth over time.</p>
+          <button class="btn btn-primary empty-cta" id="emptyImportBtn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Import First Snapshot
+          </button>
+          <div class="steps">
+            <div class="step">
+              <div class="step-num">1</div>
+              <div class="step-text"><strong>Download</strong> the sample CSV to see the format</div>
+            </div>
+            <div class="step">
+              <div class="step-num">2</div>
+              <div class="step-text"><strong>Fill in</strong> your assets, categories &amp; values</div>
+            </div>
+            <div class="step">
+              <div class="step-num">3</div>
+              <div class="step-text"><strong>Import</strong> monthly to track how you grow</div>
+            </div>
+          </div>
+          <button class="btn-link" id="emptySampleBtn">Download sample CSV →</button>
+        </div>
       </section>
 
-      <!-- Summary Strip -->
-      <section class="summary-strip" id="summaryStrip" hidden>
-        <div class="summary-card" id="summNetWorth">
-          <span class="summ-label">Net Worth</span>
-          <span class="summ-value" id="netWorthVal">—</span>
-          <span class="summ-change" id="netWorthChange"></span>
+      <!-- ══ COMPARE panel ══ -->
+      <section class="panel" id="panel-compare">
+        <div class="panel-header">
+          <div>
+            <h2>Month-to-Month Changes</h2>
+            <p class="panel-subtitle">Compare any two snapshots to see what changed.</p>
+          </div>
+          <div class="compare-selectors" id="compareSelectors">
+            <select id="compareFrom" class="select-sm"></select>
+            <svg class="compare-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            <select id="compareTo" class="select-sm"></select>
+          </div>
         </div>
-        <div class="summary-card" id="summAssets">
-          <span class="summ-label">Assets</span>
-          <span class="summ-value" id="assetsVal">—</span>
+
+        <div class="card" id="compareTableCard">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Asset</th>
+                  <th>Category</th>
+                  <th class="num">Before</th>
+                  <th class="num">After</th>
+                  <th class="num">Change ($)</th>
+                  <th class="num">Change (%)</th>
+                </tr>
+              </thead>
+              <tbody id="changesBody"></tbody>
+              <tfoot id="changesFoot"></tfoot>
+            </table>
+          </div>
         </div>
-        <div class="summary-card">
-          <span class="summ-label">Snapshots</span>
-          <span class="summ-value" id="snapshotsVal">—</span>
-        </div>
-        <div class="summary-card">
-          <span class="summ-label">Latest Month</span>
-          <span class="summ-value" id="latestMonth">—</span>
+
+        <div class="empty-state empty-state--inline" id="compareEmpty" hidden>
+          <div class="empty-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M8 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3"/><path d="M16 3h3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-3"/><line x1="12" y1="3" x2="12" y2="21"/></svg>
+          </div>
+          <p>Import at least two monthly snapshots to compare changes.</p>
         </div>
       </section>
 
-      <!-- Charts Row -->
-      <div class="charts-row" id="chartsRow" hidden>
-        <div class="card chart-card">
-          <h2>Net Worth Over Time</h2>
-          <div class="chart-wrap">
-            <canvas id="trendChart"></canvas>
+      <!-- ══ HISTORY panel ══ -->
+      <section class="panel" id="panel-history">
+        <div class="panel-header">
+          <div>
+            <h2>Snapshot History</h2>
+            <p class="panel-subtitle">All imported monthly snapshots.</p>
           </div>
         </div>
-        <div class="card chart-card chart-card--small">
-          <h2>Asset Breakdown</h2>
-          <div class="month-selector-row">
-            <label for="breakdownMonth">Month:</label>
-            <select id="breakdownMonth"></select>
-          </div>
-          <div class="chart-wrap chart-wrap--donut">
-            <canvas id="donutChart"></canvas>
-          </div>
-        </div>
-      </div>
 
-      <!-- Month-to-Month Changes -->
-      <div class="card" id="changesCard" hidden>
-        <h2>Month-to-Month Changes</h2>
-        <div class="compare-selectors">
-          <div class="compare-select">
-            <label for="compareFrom">From</label>
-            <select id="compareFrom"></select>
+        <div class="card" id="historyTableCard">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Month</th>
+                  <th class="num">Net Worth</th>
+                  <th class="num">vs Previous</th>
+                  <th class="num">Assets</th>
+                  <th class="num">Categories</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="snapshotsBody"></tbody>
+            </table>
           </div>
-          <div class="compare-select">
-            <label for="compareTo">To</label>
-            <select id="compareTo"></select>
+        </div>
+
+        <div class="empty-state empty-state--inline" id="historyEmpty" hidden>
+          <div class="empty-icon-sm">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
           </div>
+          <p>No snapshots yet. Import your first month to get started.</p>
         </div>
-        <div class="table-wrap">
-          <table id="changesTable">
-            <thead>
-              <tr>
-                <th>Asset</th>
-                <th>Category</th>
-                <th class="num">Previous</th>
-                <th class="num">Current</th>
-                <th class="num">Change ($)</th>
-                <th class="num">Change (%)</th>
-              </tr>
-            </thead>
-            <tbody id="changesBody"></tbody>
-            <tfoot id="changesFoot"></tfoot>
-          </table>
-        </div>
-      </div>
+      </section>
 
-      <!-- Snapshots Manager -->
-      <div class="card" id="snapshotsCard" hidden>
-        <h2>Snapshots</h2>
-        <div class="table-wrap">
-          <table id="snapshotsTable">
-            <thead>
-              <tr>
-                <th>Month</th>
-                <th class="num">Net Worth</th>
-                <th class="num">Assets</th>
-                <th class="num">Categories</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody id="snapshotsBody"></tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Empty state -->
-      <div class="empty-state" id="emptyState">
-        <div class="empty-icon">📊</div>
-        <h2>No data yet</h2>
-        <p>Upload your first monthly CSV snapshot above to get started.</p>
-      </div>
     </main>
-  </div>
+  </div><!-- end main-wrapper -->
+</div><!-- end app -->
 
-  <script src="app.js"></script>
+<!-- Sidebar mobile backdrop -->
+<div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+<script src="app.js"></script>
 </body>
 </html>
