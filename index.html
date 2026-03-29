@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Net Worth Tracker</title>
+  <link rel="stylesheet" href="styles.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="header-left">
+        <h1>Net Worth Tracker</h1>
+        <span class="subtitle">Monthly asset snapshot dashboard</span>
+      </div>
+      <div class="header-right">
+        <button class="btn btn-ghost" id="themeToggle" title="Toggle theme">☀</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- Upload Section -->
+      <section class="card upload-card">
+        <h2>Upload Monthly Snapshot</h2>
+        <p class="hint">
+          CSV format: <code>Asset,Category,Value</code> &mdash; one row per asset.
+          <button class="btn-link" id="downloadSample">Download sample</button>
+        </p>
+        <div class="upload-row">
+          <div class="month-picker">
+            <label for="snapshotMonth">Month</label>
+            <input type="month" id="snapshotMonth" />
+          </div>
+          <label class="file-label" for="csvFile">
+            <span id="fileLabelText">Choose CSV file…</span>
+            <input type="file" id="csvFile" accept=".csv,text/csv" />
+          </label>
+          <button class="btn btn-primary" id="uploadBtn" disabled>Import</button>
+        </div>
+        <div id="uploadError" class="error-msg" hidden></div>
+      </section>
+
+      <!-- Summary Strip -->
+      <section class="summary-strip" id="summaryStrip" hidden>
+        <div class="summary-card" id="summNetWorth">
+          <span class="summ-label">Net Worth</span>
+          <span class="summ-value" id="netWorthVal">—</span>
+          <span class="summ-change" id="netWorthChange"></span>
+        </div>
+        <div class="summary-card" id="summAssets">
+          <span class="summ-label">Assets</span>
+          <span class="summ-value" id="assetsVal">—</span>
+        </div>
+        <div class="summary-card">
+          <span class="summ-label">Snapshots</span>
+          <span class="summ-value" id="snapshotsVal">—</span>
+        </div>
+        <div class="summary-card">
+          <span class="summ-label">Latest Month</span>
+          <span class="summ-value" id="latestMonth">—</span>
+        </div>
+      </section>
+
+      <!-- Charts Row -->
+      <div class="charts-row" id="chartsRow" hidden>
+        <div class="card chart-card">
+          <h2>Net Worth Over Time</h2>
+          <div class="chart-wrap">
+            <canvas id="trendChart"></canvas>
+          </div>
+        </div>
+        <div class="card chart-card chart-card--small">
+          <h2>Asset Breakdown</h2>
+          <div class="month-selector-row">
+            <label for="breakdownMonth">Month:</label>
+            <select id="breakdownMonth"></select>
+          </div>
+          <div class="chart-wrap chart-wrap--donut">
+            <canvas id="donutChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Month-to-Month Changes -->
+      <div class="card" id="changesCard" hidden>
+        <h2>Month-to-Month Changes</h2>
+        <div class="compare-selectors">
+          <div class="compare-select">
+            <label for="compareFrom">From</label>
+            <select id="compareFrom"></select>
+          </div>
+          <div class="compare-select">
+            <label for="compareTo">To</label>
+            <select id="compareTo"></select>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table id="changesTable">
+            <thead>
+              <tr>
+                <th>Asset</th>
+                <th>Category</th>
+                <th class="num">Previous</th>
+                <th class="num">Current</th>
+                <th class="num">Change ($)</th>
+                <th class="num">Change (%)</th>
+              </tr>
+            </thead>
+            <tbody id="changesBody"></tbody>
+            <tfoot id="changesFoot"></tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Snapshots Manager -->
+      <div class="card" id="snapshotsCard" hidden>
+        <h2>Snapshots</h2>
+        <div class="table-wrap">
+          <table id="snapshotsTable">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th class="num">Net Worth</th>
+                <th class="num">Assets</th>
+                <th class="num">Categories</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="snapshotsBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Empty state -->
+      <div class="empty-state" id="emptyState">
+        <div class="empty-icon">📊</div>
+        <h2>No data yet</h2>
+        <p>Upload your first monthly CSV snapshot above to get started.</p>
+      </div>
+    </main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
